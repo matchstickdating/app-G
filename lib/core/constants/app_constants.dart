@@ -9,7 +9,7 @@ class AppConstants {
   // Supabase Configuration Keys (can be overridden via environment or runtime)
   static const String supabaseUrlEnv = 'SUPABASE_URL';
   static const String supabaseAnonKeyEnv = 'SUPABASE_ANON_KEY';
-  static const String defaultSupabaseUrl = 'https://demo-matchstick.supabase.co';
+  static const String defaultSupabaseUrl = 'https://tzgawsjugmvhbfgeatnh.supabase.co';
   static const String defaultSupabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy_key';
 
   // Storage Buckets
