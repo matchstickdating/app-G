@@ -636,6 +636,22 @@ FOR EACH ROW EXECUTE FUNCTION public.handle_mutual_like();
 CREATE OR REPLACE FUNCTION public.handle_auth_user_created()
 RETURNS TRIGGER AS $$
 BEGIN
+    INSERT INTO public.profiles (
+        id,
+        display_name,
+        birthdate,
+        gender,
+        relationship_goal
+    )
+    VALUES (
+        NEW.id,
+        COALESCE(NEW.raw_user_meta_data->>'name', 'New Member'),
+        '2000-01-01',
+        'prefer_not_to_say',
+        'figuring_it_out'
+    )
+    ON CONFLICT (id) DO NOTHING;
+
     INSERT INTO public.user_settings (user_id)
     VALUES (NEW.id)
     ON CONFLICT (user_id) DO NOTHING;
