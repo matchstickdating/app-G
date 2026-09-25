@@ -7,9 +7,15 @@ import '../../../../core/widgets/match_avatar.dart';
 import '../../../../core/widgets/match_bottom_sheet.dart';
 import '../../../../core/widgets/match_button.dart';
 import '../../../../core/widgets/match_card.dart';
+import '../../../../core/widgets/match_chip.dart';
 import '../../../../core/widgets/match_toast.dart';
+import '../../../ai/presentation/controllers/ai_controller.dart';
+import '../../../ai/presentation/screens/match_coach_screen.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../../date_planner/presentation/screens/date_ideas_screen.dart';
+import '../../../date_planner/presentation/screens/date_planner_screen.dart';
 import '../../../profile/domain/entities/profile_entity.dart';
+import '../../../profile/presentation/controllers/profile_controller.dart';
 import '../../../profile/presentation/screens/profile_detail_screen.dart';
 import '../controllers/chat_controller.dart';
 import '../widgets/chat_input_bar.dart';
@@ -37,6 +43,12 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     super.initState();
     Future.microtask(() {
       ref.read(chatControllerProvider.notifier).openConversation(widget.matchId);
+      final myProfile = ref.read(profileControllerProvider).profile;
+      ref.read(aiControllerProvider.notifier).fetchStarters(
+            partnerName: widget.partnerProfile.displayName,
+            myInterests: myProfile?.interests ?? ['design', 'coffee', 'literature'],
+            partnerInterests: widget.partnerProfile.interests,
+          );
     });
   }
 
@@ -58,9 +70,47 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     });
   }
 
+  void _openMatchCoach() {
+    Navigator.of(context).push(
+      MotionTokens.editorialPageRoute(
+        page: MatchCoachScreen(partnerName: widget.partnerProfile.displayName),
+      ),
+    );
+  }
+
+  void _openDatePlanner() {
+    Navigator.of(context).push(
+      MotionTokens.editorialPageRoute(
+        page: DatePlannerScreen(
+          partnerName: widget.partnerProfile.displayName,
+          matchId: widget.matchId,
+          onShareToChat: (planText) {
+            ref.read(chatControllerProvider.notifier).sendMessage(widget.matchId, planText);
+            _scrollToBottom();
+          },
+        ),
+      ),
+    );
+  }
+
+  void _openDateIdeas() {
+    Navigator.of(context).push(
+      MotionTokens.editorialPageRoute(
+        page: DateIdeasScreen(
+          partnerName: widget.partnerProfile.displayName,
+          onShareToChat: (ideaText) {
+            ref.read(chatControllerProvider.notifier).sendMessage(widget.matchId, ideaText);
+            _scrollToBottom();
+          },
+        ),
+      ),
+    );
+  }
+
   void _showAiAssistant() {
     final partner = widget.partnerProfile;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final aiState = ref.read(aiControllerProvider);
 
     MatchBottomSheet.show(
       context: context,
@@ -87,6 +137,49 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
                 color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
               ),
             ),
+            const SizedBox(height: 16),
+
+            // Quick Tool Shortcuts
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: MatchChip(
+                      label: '✦ match coach',
+                      isSelected: false,
+                      onSelected: () {
+                        Navigator.of(context).pop();
+                        _openMatchCoach();
+                      },
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: MatchChip(
+                      label: '✦ plan a date',
+                      isSelected: false,
+                      onSelected: () {
+                        Navigator.of(context).pop();
+                        _openDatePlanner();
+                      },
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: MatchChip(
+                      label: '✦ date ideas',
+                      isSelected: false,
+                      onSelected: () {
+                        Navigator.of(context).pop();
+                        _openDateIdeas();
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 20),
 
             // Starter Suggestions
@@ -98,25 +191,34 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
             ),
             const SizedBox(height: 10),
 
-            _buildAiSuggestionTile(
-              'you both appreciate ${partner.interests.firstOrNull ?? "intentional design"}.',
-              '"what\'s the most inspiring place or space you\'ve explored lately?"',
-              isDark,
-            ),
-            const SizedBox(height: 10),
-
-            _buildAiSuggestionTile(
-              'playful reply',
-              '"okay, important question: who gets control of the playlist on a road trip?"',
-              isDark,
-            ),
-            const SizedBox(height: 10),
-
-            _buildAiSuggestionTile(
-              'thoughtful question',
-              '"saw your note on quiet Sundays. what\'s your ideal morning routine look like?"',
-              isDark,
-            ),
+            if (aiState.starters.isNotEmpty) ...[
+              ...aiState.starters.map((s) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _buildAiSuggestionTile(
+                      s.tone ?? 'thoughtful',
+                      s.suggestionText,
+                      isDark,
+                    ),
+                  )),
+            ] else ...[
+              _buildAiSuggestionTile(
+                'you both appreciate ${partner.interests.firstOrNull ?? "intentional design"}.',
+                '"what\'s the most inspiring place or space you\'ve explored lately?"',
+                isDark,
+              ),
+              const SizedBox(height: 10),
+              _buildAiSuggestionTile(
+                'playful reply',
+                '"okay, important question: who gets control of the playlist on a road trip?"',
+                isDark,
+              ),
+              const SizedBox(height: 10),
+              _buildAiSuggestionTile(
+                'thoughtful question',
+                '"saw your note on quiet Sundays. what\'s your ideal morning routine look like?"',
+                isDark,
+              ),
+            ],
             const SizedBox(height: 24),
           ],
         ),
@@ -128,7 +230,6 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
     return MatchCard(
       onTap: () {
         Navigator.of(context).pop();
-        // Send suggestion directly or insert to bar
         ref.read(chatControllerProvider.notifier).sendMessage(
               widget.matchId,
               suggestion.replaceAll('"', ''),
@@ -141,7 +242,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
         children: [
           Text(
             title.toLowerCase(),
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
               color: AppColors.accent,
@@ -174,6 +275,31 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
             mainAxisSize: MainAxisSize.min,
             children: [
               ListTile(
+                leading: const Icon(Icons.auto_awesome, color: AppColors.accent),
+                title: const Text('✦ match coach'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _openMatchCoach();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.calendar_today_outlined, color: AppColors.accent),
+                title: const Text('✦ plan a date with ai'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _openDatePlanner();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.lightbulb_outline, color: AppColors.accent),
+                title: const Text('✦ curated date ideas'),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  _openDateIdeas();
+                },
+              ),
+              const Divider(height: 1),
+              ListTile(
                 leading: const Icon(Icons.person_outline),
                 title: const Text('view profile'),
                 onTap: () {
@@ -182,7 +308,7 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
                     MotionTokens.editorialPageRoute(
                       page: Scaffold(
                         appBar: AppBar(title: Text(partner.displayName.toLowerCase())),
-                        body: ProfileDetailScreen(isMyProfile: false),
+                        body: const ProfileDetailScreen(isMyProfile: false),
                       ),
                     ),
                   );
@@ -253,6 +379,11 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: 'ai dating assistant',
+            icon: const Icon(Icons.auto_awesome, color: AppColors.accent, size: 20),
+            onPressed: _showAiAssistant,
+          ),
           IconButton(
             icon: const Icon(Icons.more_vert),
             onPressed: _showOptionsMenu,

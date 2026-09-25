@@ -7,6 +7,7 @@ import '../../../../core/widgets/match_card.dart';
 import '../../../../core/widgets/match_text.dart';
 import '../../../../core/widgets/match_text_field.dart';
 import '../../../../core/widgets/match_toast.dart';
+import '../../../ai/presentation/widgets/profile_polish_modal.dart';
 import '../controllers/profile_controller.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
@@ -223,6 +224,27 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 maxLines: 3,
                 maxLength: 250,
               ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: MatchButton(
+                  text: '✦ polish bio with ai',
+                  variant: MatchButtonVariant.outline,
+                  size: MatchButtonSize.compact,
+                  isFullWidth: false,
+                  leadingIcon: const Icon(Icons.auto_awesome, size: 14, color: AppColors.accent),
+                  onPressed: () {
+                    ProfilePolishModal.show(
+                      context: context,
+                      originalText: _bioController.text,
+                      title: 'about you',
+                      onApply: (polished) {
+                        setState(() => _bioController.text = polished);
+                      },
+                    );
+                  },
+                ),
+              ),
               const SizedBox(height: 24),
 
               // Location
@@ -322,6 +344,27 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 hintText: 'type your answer...',
                 maxLines: 2,
                 maxLength: 140,
+              ),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: MatchButton(
+                  text: '✦ polish prompt with ai',
+                  variant: MatchButtonVariant.outline,
+                  size: MatchButtonSize.compact,
+                  isFullWidth: false,
+                  leadingIcon: const Icon(Icons.auto_awesome, size: 14, color: AppColors.accent),
+                  onPressed: () {
+                    ProfilePolishModal.show(
+                      context: context,
+                      originalText: _promptAnswerController.text,
+                      title: _promptQuestion,
+                      onApply: (polished) {
+                        setState(() => _promptAnswerController.text = polished);
+                      },
+                    );
+                  },
+                ),
               ),
               const SizedBox(height: 36),
 
