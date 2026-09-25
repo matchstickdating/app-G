@@ -22,7 +22,12 @@ export function Sidebar() {
     { label: 'Photo Verification', href: '/verifications', icon: ShieldCheck, badge: 28 },
     { label: 'Safety & Reports', href: '/reports', icon: AlertTriangle, badge: 9, badgeVariant: 'danger' },
     { label: 'AI Telemetry', href: '/ai-analytics', icon: Sparkles },
+    { label: 'Live Landing Page', href: '/landing', icon: LogOut },
   ];
+
+  if (pathname === '/landing') {
+    return null;
+  }
 
   return (
     <aside className="w-64 h-screen bg-[#141414] text-neutral-300 flex flex-col border-r border-neutral-800/80 select-none">

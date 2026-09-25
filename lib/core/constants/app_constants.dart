@@ -10,7 +10,7 @@ class AppConstants {
   static const String supabaseUrlEnv = 'SUPABASE_URL';
   static const String supabaseAnonKeyEnv = 'SUPABASE_ANON_KEY';
   static const String defaultSupabaseUrl = 'https://tzgawsjugmvhbfgeatnh.supabase.co';
-  static const String defaultSupabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.dummy_key';
+  static const String defaultSupabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR6Z2F3c2p1Z212aGJmZ2VhdG5oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAzMjU4NzgsImV4cCI6MjEwNTkwMTg3OH0.kTYeTXcmMnjbHHB9Fr4J4UiO241UMEieNcq8aFkdGTg';
 
   // Storage Buckets
   static const String bucketAvatars = 'avatars';

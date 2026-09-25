@@ -37,15 +37,25 @@ INSERT INTO public.interests (name, category, icon) VALUES
 ON CONFLICT (name) DO NOTHING;
 
 -- 2. SAMPLE MOCK USERS & PROFILES FOR TESTING
--- (IDs are deterministic UUIDs for repeatable testing)
-DO $$
+-- (Deterministic UUIDs for reliable testing & preview)
+DO $matchstick_seed$
 DECLARE
     user1_id UUID := '11111111-1111-1111-1111-111111111111';
     user2_id UUID := '22222222-2222-2222-2222-222222222222';
     user3_id UUID := '33333333-3333-3333-3333-333333333333';
     match1_id UUID := 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
 BEGIN
-    -- Only insert if not already present
+    -- Ensure mock auth.users exist so foreign key constraint on public.profiles(id) succeeds
+    INSERT INTO auth.users (
+        id, instance_id, aud, role, email, encrypted_password, email_confirmed_at,
+        raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+    ) VALUES 
+    (user1_id, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'ananya@matchstick.dating', '$2a$10$abcdefghijklmnopqrstuvwxyz1234567890abcdefghijklmnopqrst', now(), '{"provider":"email","providers":["email"]}'::jsonb, '{"name":"Ananya"}'::jsonb, now(), now()),
+    (user2_id, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'marcus@matchstick.dating', '$2a$10$abcdefghijklmnopqrstuvwxyz1234567890abcdefghijklmnopqrst', now(), '{"provider":"email","providers":["email"]}'::jsonb, '{"name":"Marcus"}'::jsonb, now(), now()),
+    (user3_id, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'sofia@matchstick.dating', '$2a$10$abcdefghijklmnopqrstuvwxyz1234567890abcdefghijklmnopqrst', now(), '{"provider":"email","providers":["email"]}'::jsonb, '{"name":"Sofia"}'::jsonb, now(), now())
+    ON CONFLICT (id) DO NOTHING;
+
+    -- Only insert profiles if not already present
     IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = user1_id) THEN
         -- Profile 1: Ananya (Designer, Chennai)
         INSERT INTO public.profiles (
@@ -123,4 +133,4 @@ BEGIN
             'shared'
         );
     END IF;
-END $$;
+END $matchstick_seed$;
