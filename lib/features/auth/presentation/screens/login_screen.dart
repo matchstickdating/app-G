@@ -9,6 +9,8 @@ import '../../../../core/widgets/match_toast.dart';
 import '../controllers/auth_controller.dart';
 import 'forgot_password_screen.dart';
 import 'signup_screen.dart';
+import '../../../onboarding/presentation/screens/onboarding_flow_screen.dart';
+import '../../../../core/routing/main_navigation_shell.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -45,6 +47,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!success && mounted) {
       final error = ref.read(authControllerProvider).errorMessage ?? 'failed to sign in.';
       MatchToast.show(context, message: error, type: ToastType.error);
+    } else if (success && mounted) {
+      final authState = ref.read(authControllerProvider);
+      final targetPage = authState.status == AuthStatus.onboardingRequired
+          ? const OnboardingFlowScreen()
+          : const MainNavigationShell();
+      Navigator.of(context).pushAndRemoveUntil(
+        MotionTokens.editorialPageRoute(
+          page: targetPage,
+        ),
+        (route) => false,
+      );
     }
   }
 
@@ -145,8 +158,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
               // Sign Up Navigation
               Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     const MatchText(
                       'new to match stick? ',

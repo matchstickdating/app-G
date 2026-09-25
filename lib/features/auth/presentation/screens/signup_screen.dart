@@ -8,6 +8,7 @@ import '../../../../core/widgets/match_text_field.dart';
 import '../../../../core/widgets/match_toast.dart';
 import '../controllers/auth_controller.dart';
 import 'login_screen.dart';
+import '../../../onboarding/presentation/screens/onboarding_flow_screen.dart';
 
 class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({super.key});
@@ -51,6 +52,14 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     if (!success && mounted) {
       final error = ref.read(authControllerProvider).errorMessage ?? 'failed to create account.';
       MatchToast.show(context, message: error, type: ToastType.error);
+    } else if (success && mounted) {
+      MatchToast.show(context, message: 'account created! let\'s build your profile.', type: ToastType.success);
+      Navigator.of(context).pushAndRemoveUntil(
+        MotionTokens.editorialPageRoute(
+          page: const OnboardingFlowScreen(),
+        ),
+        (route) => false,
+      );
     }
   }
 
@@ -135,8 +144,9 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
 
               // Login Navigation
               Center(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                child: Wrap(
+                  alignment: WrapAlignment.center,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     const MatchText(
                       'already have an account? ',

@@ -13,10 +13,16 @@ class SupabaseService {
     String? supabaseUrl,
     String? supabaseAnonKey,
   }) async {
-    final url = supabaseUrl ??
-        const String.fromEnvironment(AppConstants.supabaseUrlEnv, defaultValue: '');
-    final anonKey = supabaseAnonKey ??
-        const String.fromEnvironment(AppConstants.supabaseAnonKeyEnv, defaultValue: '');
+    final envUrl = const String.fromEnvironment(AppConstants.supabaseUrlEnv, defaultValue: '');
+    final envKey = const String.fromEnvironment(AppConstants.supabaseAnonKeyEnv, defaultValue: '');
+
+    final url = (supabaseUrl != null && supabaseUrl.isNotEmpty)
+        ? supabaseUrl
+        : (envUrl.isNotEmpty ? envUrl : AppConstants.defaultSupabaseUrl);
+
+    final anonKey = (supabaseAnonKey != null && supabaseAnonKey.isNotEmpty)
+        ? supabaseAnonKey
+        : (envKey.isNotEmpty ? envKey : AppConstants.defaultSupabaseAnonKey);
 
     if (url.isNotEmpty && anonKey.isNotEmpty && !url.contains('dummy')) {
       try {
