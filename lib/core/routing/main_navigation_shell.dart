@@ -1,30 +1,41 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
-import '../widgets/design_system_showcase.dart';
+import '../../features/chat/presentation/screens/matches_and_chat_screen.dart';
+import '../../features/discovery/presentation/screens/discovery_screen.dart';
+import '../../features/matching/presentation/screens/likes_screen.dart';
 import '../../features/profile/presentation/screens/profile_detail_screen.dart';
-import '../../main.dart';
 
 class MainNavigationShell extends StatefulWidget {
-  const MainNavigationShell({super.key});
+  final int initialIndex;
+
+  const MainNavigationShell({
+    super.key,
+    this.initialIndex = 0,
+  });
 
   @override
   State<MainNavigationShell> createState() => _MainNavigationShellState();
 }
 
 class _MainNavigationShellState extends State<MainNavigationShell> {
-  int _currentIndex = 3; // Default to profile for Phase 2 demonstration
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final pages = [
-      _buildPlaceholderTab('discover', 'intelligent discovery feed\narrives in phase 3.', isDark),
-      _buildPlaceholderTab('likes', 'curated likes and interest\narrives in phase 3.', isDark),
-      _buildPlaceholderTab('messages', 'realtime conversations\narrives in phase 3.', isDark),
-      const ProfileDetailScreen(isMyProfile: true),
+    final pages = const [
+      DiscoveryScreen(),
+      LikesScreen(),
+      MatchesAndChatScreen(),
+      ProfileDetailScreen(isMyProfile: true),
     ];
 
     return Scaffold(
@@ -44,7 +55,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
         ),
         child: SafeArea(
           child: SizedBox(
-            height: 64,
+            height: 62,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -98,82 +109,6 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildPlaceholderTab(String title, String subtitle, bool isDark) {
-    return Consumer(
-      builder: (context, ref, child) {
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(
-              title,
-              style: AppTypography.navigation(fontWeight: FontWeight.w600),
-            ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.style_outlined, size: 20),
-                tooltip: 'Design System Showcase',
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => DesignSystemShowcase(
-                        isDark: isDark,
-                        onToggleTheme: () {
-                          ref.read(themeModeProvider.notifier).toggle();
-                        },
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
-          body: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 54,
-                    height: 54,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-                      border: Border.all(
-                        color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-                      ),
-                    ),
-                    child: Center(
-                      child: Icon(
-                        Icons.auto_awesome,
-                        size: 24,
-                        color: AppColors.accent,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    title,
-                    style: AppTypography.headingMedium(
-                      color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    subtitle,
-                    style: AppTypography.bodyMedium(
-                      color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
     );
   }
 }
