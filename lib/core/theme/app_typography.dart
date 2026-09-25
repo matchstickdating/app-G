@@ -104,10 +104,10 @@ class AppTypography {
   }
 
   /// Navigation Bar & Bottom Tabs (12-13px, lowercase, tight tracking)
-  static TextStyle navigation({Color? color, bool isActive = false}) {
+  static TextStyle navigation({Color? color, bool isActive = false, FontWeight? fontWeight}) {
     return _baseFont.copyWith(
       fontSize: 12,
-      fontWeight: isActive ? FontWeight.w500 : FontWeight.w400,
+      fontWeight: fontWeight ?? (isActive ? FontWeight.w500 : FontWeight.w400),
       letterSpacing: -0.02 * 12,
       height: 1.2,
       color: color ?? (isActive ? AppColors.accent : AppColors.lightTextSecondary),
