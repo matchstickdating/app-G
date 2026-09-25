@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
 import '../../features/chat/presentation/screens/matches_and_chat_screen.dart';
+import '../../features/community/presentation/screens/community_feed_screen.dart';
 import '../../features/discovery/presentation/screens/discovery_screen.dart';
 import '../../features/matching/presentation/screens/likes_screen.dart';
 import '../../features/profile/presentation/screens/profile_detail_screen.dart';
@@ -34,6 +35,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     final pages = const [
       DiscoveryScreen(),
       LikesScreen(),
+      CommunityFeedScreen(),
       MatchesAndChatScreen(),
       ProfileDetailScreen(isMyProfile: true),
     ];
@@ -61,8 +63,9 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
               children: [
                 _buildNavItem(0, 'discover', Icons.explore_outlined, Icons.explore, isDark),
                 _buildNavItem(1, 'likes', Icons.favorite_border, Icons.favorite, isDark),
-                _buildNavItem(2, 'messages', Icons.chat_bubble_outline, Icons.chat_bubble, isDark),
-                _buildNavItem(3, 'profile', Icons.person_outline, Icons.person, isDark),
+                _buildNavItem(2, 'lounges', Icons.forum_outlined, Icons.forum, isDark),
+                _buildNavItem(3, 'messages', Icons.chat_bubble_outline, Icons.chat_bubble, isDark),
+                _buildNavItem(4, 'profile', Icons.person_outline, Icons.person, isDark),
               ],
             ),
           ),

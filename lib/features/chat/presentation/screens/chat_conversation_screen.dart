@@ -17,6 +17,7 @@ import '../../../date_planner/presentation/screens/date_planner_screen.dart';
 import '../../../profile/domain/entities/profile_entity.dart';
 import '../../../profile/presentation/controllers/profile_controller.dart';
 import '../../../profile/presentation/screens/profile_detail_screen.dart';
+import '../../../safety/presentation/widgets/report_modal.dart';
 import '../controllers/chat_controller.dart';
 import '../widgets/chat_input_bar.dart';
 import '../widgets/message_bubble.dart';
@@ -334,6 +335,18 @@ class _ChatConversationScreenState extends ConsumerState<ChatConversationScreen>
                   if (!mounted) return;
                   MatchToast.show(this.context, message: '${partner.displayName.toLowerCase()} has been blocked.');
                   Navigator.of(this.context).pop();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.shield_outlined, color: AppColors.error),
+                title: const Text('report user', style: TextStyle(color: AppColors.error)),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  ReportModal.show(
+                    context: context,
+                    targetUserId: partner.id,
+                    targetUserName: partner.displayName,
+                  );
                 },
               ),
             ],

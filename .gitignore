@@ -11,6 +11,10 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+node_modules/
+.next/
+admin/node_modules/
+admin/.next/
 
 # IntelliJ related
 *.iml

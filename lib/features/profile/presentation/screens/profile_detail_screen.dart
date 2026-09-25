@@ -4,9 +4,14 @@ import '../../../../core/motion/motion_tokens.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/match_button.dart';
+import '../../../../core/widgets/match_card.dart';
 import '../../../../core/widgets/match_chip.dart';
 import '../../../../core/widgets/match_text.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../../monetization/presentation/controllers/subscription_controller.dart';
+import '../../../monetization/presentation/screens/paywall_screen.dart';
+import '../../../safety/presentation/screens/safety_center_screen.dart';
+import '../../../safety/presentation/widgets/report_modal.dart';
 import '../controllers/profile_controller.dart';
 import '../widgets/profile_completeness_badge.dart';
 import '../widgets/profile_photo_carousel.dart';
@@ -26,6 +31,7 @@ class ProfileDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final profileState = ref.watch(profileControllerProvider);
+    final isStudioMember = ref.watch(subscriptionControllerProvider).isStudioMember;
     final profile = profileState.profile;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -273,6 +279,80 @@ class ProfileDetailScreen extends ConsumerWidget {
 
                   // Edit Profile or Sign Out for Owner
                   if (isMyProfile) ...[
+                    // Studio Membership Card
+                    MatchCard(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MotionTokens.editorialPageRoute(
+                            page: const PaywallScreen(),
+                          ),
+                        );
+                      },
+                      padding: const EdgeInsets.all(16),
+                      borderColor: AppColors.accent.withValues(alpha: 0.4),
+                      backgroundColor: isDark ? const Color(0xFF221515) : const Color(0xFFFFF6F6),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.auto_awesome, color: AppColors.accent, size: 20),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('match stick studio', style: AppTypography.headingSmall().copyWith(fontSize: 15)),
+                                const SizedBox(height: 2),
+                                Text(
+                                  isStudioMember
+                                      ? 'active studio membership • enjoy all perks'
+                                      : 'see who liked you, unlimited rewinds & priority ai',
+                                  style: AppTypography.caption(
+                                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right, size: 18),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    // Safety Center Card
+                    MatchCard(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MotionTokens.editorialPageRoute(
+                            page: const SafetyCenterScreen(),
+                          ),
+                        );
+                      },
+                      padding: const EdgeInsets.all(16),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.shield_outlined, size: 20),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('safety & trust center', style: AppTypography.headingSmall().copyWith(fontSize: 15)),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'photo verification, in-person guides & emergency help',
+                                  style: AppTypography.caption(
+                                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.chevron_right, size: 18),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+
                     MatchButton(
                       text: 'edit profile',
                       variant: MatchButtonVariant.primary,
@@ -290,6 +370,19 @@ class ProfileDetailScreen extends ConsumerWidget {
                       variant: MatchButtonVariant.text,
                       onPressed: () {
                         ref.read(authControllerProvider.notifier).signOut();
+                      },
+                    ),
+                  ] else ...[
+                    const SizedBox(height: 16),
+                    MatchButton(
+                      text: 'report or block ${profile.displayName.toLowerCase()}',
+                      variant: MatchButtonVariant.text,
+                      onPressed: () {
+                        ReportModal.show(
+                          context: context,
+                          targetUserId: profile.id,
+                          targetUserName: profile.displayName,
+                        );
                       },
                     ),
                   ],
