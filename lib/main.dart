@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/constants/app_constants.dart';
 import 'core/network/supabase_service.dart';
 import 'core/theme/app_theme.dart';
-import 'core/routing/auth_gate.dart';
+import 'features/splash/presentation/screens/splash_screen.dart';
 
 /// Global Theme Mode Notifier for dynamic light/dark mode toggling
 class ThemeModeNotifier extends Notifier<ThemeMode> {
@@ -49,7 +49,7 @@ class MatchStickApp extends ConsumerWidget {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: themeMode,
-      home: const AuthGate(),
+      home: const SplashScreen(),
     );
   }
 }

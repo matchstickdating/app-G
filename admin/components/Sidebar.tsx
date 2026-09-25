@@ -33,12 +33,12 @@ export function Sidebar() {
     <aside className="w-64 h-screen bg-[#141414] text-neutral-300 flex flex-col border-r border-neutral-800/80 select-none">
       {/* Brand Header */}
       <div className="h-16 flex items-center px-6 border-b border-neutral-800/80 gap-3">
-        <div className="w-8 h-8 rounded-lg bg-[#FF5C5C] flex items-center justify-center text-white shadow-sm shadow-[#FF5C5C]/30">
-          <Flame className="w-5 h-5 fill-white" />
+        <div className="w-9 h-9 rounded-xl overflow-hidden bg-neutral-900 border border-neutral-800 shadow-sm shadow-[#FF5C5C]/20 flex items-center justify-center">
+          <img src="/match_spark_3d.png" alt="Match Stick" className="w-full h-full object-cover" />
         </div>
         <div>
-          <span className="font-semibold tracking-tight text-white text-base">MATCH STICK</span>
-          <span className="block text-[10px] text-neutral-500 uppercase tracking-wider font-mono">Control Portal</span>
+          <span className="font-bold tracking-tight text-white text-base">MATCH STICK</span>
+          <span className="block text-[10px] text-[#FF5C5C] uppercase tracking-wider font-semibold">Control Portal</span>
         </div>
       </div>
 

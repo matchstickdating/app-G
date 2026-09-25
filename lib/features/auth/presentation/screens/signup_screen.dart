@@ -17,13 +17,33 @@ class SignUpScreen extends ConsumerStatefulWidget {
   ConsumerState<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _SignUpScreenState extends ConsumerState<SignUpScreen> {
+class _SignUpScreenState extends ConsumerState<SignUpScreen> with SingleTickerProviderStateMixin {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  late AnimationController _floatController;
+  late Animation<Offset> _floatAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _floatController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2600),
+    )..repeat(reverse: true);
+
+    _floatAnimation = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(0, -8),
+    ).animate(CurvedAnimation(
+      parent: _floatController,
+      curve: Curves.easeInOutSine,
+    ));
+  }
 
   @override
   void dispose() {
+    _floatController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -71,43 +91,105 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
     return Scaffold(
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: 32),
+              const SizedBox(height: 12),
               // App Brand Mark
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      color: AppColors.accent,
-                      shape: BoxShape.circle,
-                    ),
+                  Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: AppColors.accent,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const MatchText(
+                        'match stick',
+                        style: MatchTextStyle.caption,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  const MatchText(
-                    'match stick',
-                    style: MatchTextStyle.caption,
-                    fontWeight: FontWeight.w600,
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      'JOIN COHORT',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.0,
+                        color: AppColors.accent,
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 48),
+              const SizedBox(height: 24),
+
+              // 3D Animated Hero Graphic
+              Center(
+                child: AnimatedBuilder(
+                  animation: _floatAnimation,
+                  builder: (context, child) {
+                    return Transform.translate(
+                      offset: _floatAnimation.value,
+                      child: child,
+                    );
+                  },
+                  child: Container(
+                    width: 160,
+                    height: 160,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.accent.withValues(alpha: isDark ? 0.35 : 0.18),
+                          blurRadius: 32,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(80),
+                      child: Image.asset(
+                        'assets/images/signup_journey_3d.png',
+                        fit: BoxFit.cover,
+                        errorBuilder: (ctx, err, stack) => const Icon(
+                          Icons.local_fire_department,
+                          size: 64,
+                          color: AppColors.accent,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
 
               // Editorial Headline
               const MatchText(
                 'let\'s\nbegin.',
                 style: MatchTextStyle.hero,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               const MatchText(
                 'dating, with a little more intention.',
                 style: MatchTextStyle.bodyMedium,
               ),
-              const SizedBox(height: 40),
+              const SizedBox(height: 32),
 
               // Inputs
               MatchTextField(
@@ -116,14 +198,14 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 hintText: 'alex@example.com',
                 keyboardType: TextInputType.emailAddress,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
               MatchTextField(
                 controller: _passwordController,
                 label: 'create password',
                 hintText: '••••••••',
                 isPassword: true,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
               MatchTextField(
                 controller: _confirmPasswordController,
                 label: 'confirm password',
@@ -131,7 +213,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                 isPassword: true,
                 onSubmitted: _handleSignUp,
               ),
-              const SizedBox(height: 36),
+              const SizedBox(height: 32),
 
               // Submit Button
               MatchButton(
@@ -173,7 +255,7 @@ class _SignUpScreenState extends ConsumerState<SignUpScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
             ],
           ),
         ),

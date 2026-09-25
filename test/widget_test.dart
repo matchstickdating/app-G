@@ -17,7 +17,7 @@ import 'package:matchstick/features/safety/presentation/screens/selfie_verificat
 import 'package:matchstick/main.dart';
 
 void main() {
-  testWidgets('MatchStickApp renders AuthGate with LoginScreen by default', (WidgetTester tester) async {
+  testWidgets('MatchStickApp renders SplashScreen and transitions to LoginScreen', (WidgetTester tester) async {
     await tester.pumpWidget(
       const ProviderScope(
         child: MatchStickApp(),
@@ -25,7 +25,13 @@ void main() {
     );
 
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('match stick'), findsOneWidget);
+    expect(find.text('ignite something real.'), findsOneWidget);
+
+    // Tap to trigger immediate navigation
+    await tester.tap(find.text('match stick'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 600));
 
     expect(find.text('welcome\nback.'), findsOneWidget);
     expect(find.byType(LoginScreen), findsOneWidget);

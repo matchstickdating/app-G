@@ -54,6 +54,49 @@ export default function DashboardOverview() {
           </div>
         </div>
 
+        {/* Editorial 3D Platform Hero Banner */}
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#181818] via-[#1c1818] to-[#251717] border border-neutral-800/80 p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
+          <div className="space-y-3 z-10 max-w-xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#FF5C5C]/15 border border-[#FF5C5C]/30 text-[#FF5C5C] text-xs font-semibold tracking-wide uppercase">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#FF5C5C] animate-ping" />
+              <span>Match Stick Control Center</span>
+            </div>
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+              Igniting Intentional Connections
+            </h2>
+            <p className="text-sm text-neutral-400 leading-relaxed">
+              Curated dating operations: real-time telemetry, selfie biometrics, AI conversational coaching health, and trust verification.
+            </p>
+            <div className="flex flex-wrap gap-3 pt-2">
+              <Link 
+                href="/verifications" 
+                className="px-4 py-2 bg-[#FF5C5C] hover:bg-[#E84A4A] text-white text-xs font-semibold rounded-xl transition-all shadow-md shadow-[#FF5C5C]/20 flex items-center gap-1.5"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Review Verifications ({verifications.length})</span>
+              </Link>
+              <Link 
+                href="/users" 
+                className="px-4 py-2 bg-neutral-800/80 hover:bg-neutral-700 text-neutral-200 text-xs font-semibold rounded-xl transition-all border border-neutral-700 flex items-center gap-1.5"
+              >
+                <Users className="w-3.5 h-3.5" />
+                <span>User Directory</span>
+              </Link>
+            </div>
+          </div>
+
+          <div className="relative flex items-center justify-center shrink-0">
+            <div className="absolute -inset-4 bg-[#FF5C5C]/20 rounded-full blur-2xl pointer-events-none" />
+            <div className="w-36 h-36 sm:w-44 sm:h-44 rounded-2xl overflow-hidden border-2 border-[#FF5C5C]/30 shadow-2xl relative z-10">
+              <img 
+                src="/login_love_3d.png" 
+                alt="Match Stick 3D Love" 
+                className="w-full h-full object-cover transform hover:scale-105 transition-transform duration-500" 
+              />
+            </div>
+          </div>
+        </div>
+
         {/* Metric Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
           {/* Active Members */}
