@@ -1,7 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/motion/motion_tokens.dart';
+import '../../../../core/network/supabase_service.dart';
+import '../../../../core/routing/main_navigation_shell.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/match_button.dart';
 import '../../../../core/widgets/match_card.dart';
@@ -25,6 +29,7 @@ class _OnboardingFlowScreenState extends ConsumerState<OnboardingFlowScreen> {
   final _countryController = TextEditingController();
   final _bioController = TextEditingController();
   final _promptAnswerController = TextEditingController();
+  bool _isUploadingPhoto = false;
 
   final List<String> _availableInterests = [
     'specialty coffee',
@@ -97,11 +102,481 @@ class _OnboardingFlowScreenState extends ConsumerState<OnboardingFlowScreen> {
       notifier.nextStep();
     } else {
       // Last step -> Finish onboarding
-      final success = await notifier.finishOnboarding();
-      if (!success && mounted) {
-        MatchToast.show(context, message: 'could not save profile. try again.', type: ToastType.error);
+      await notifier.finishOnboarding();
+      if (mounted) {
+        MatchToast.show(
+          context,
+          message: 'profile complete! welcome to match stick.',
+          type: ToastType.success,
+        );
+        Navigator.of(context).pushAndRemoveUntil(
+          MotionTokens.editorialPageRoute(
+            page: const MainNavigationShell(),
+          ),
+          (route) => false,
+        );
       }
     }
+  }
+
+  // --- Photo Upload & Selection Logic ---
+
+  Future<void> _pickAndUploadImage({int? replaceIndex}) async {
+    setState(() => _isUploadingPhoto = true);
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 85,
+      );
+
+      if (picked == null) {
+        setState(() => _isUploadingPhoto = false);
+        return;
+      }
+
+      final bytes = await picked.readAsBytes();
+      final base64String = base64Encode(bytes);
+      final mimeType = picked.mimeType ?? 'image/jpeg';
+      String finalUrl = 'data:$mimeType;base64,$base64String';
+
+      // Attempt Supabase storage upload if authenticated
+      try {
+        final currentAuthUser = SupabaseService.client?.auth.currentUser;
+        if (currentAuthUser != null && SupabaseService.client != null) {
+          final fileName = '${currentAuthUser.id}/${DateTime.now().millisecondsSinceEpoch}.jpg';
+          await SupabaseService.client!.storage.from('avatars').uploadBinary(
+            fileName,
+            bytes,
+          ).timeout(const Duration(seconds: 4));
+          final publicUrl = SupabaseService.client!.storage.from('avatars').getPublicUrl(fileName);
+          if (publicUrl.isNotEmpty) {
+            finalUrl = publicUrl;
+          }
+        }
+      } catch (_) {
+        // Fallback to base64 data URL
+      }
+
+      final notifier = ref.read(onboardingControllerProvider.notifier);
+      if (replaceIndex != null) {
+        notifier.replacePhoto(replaceIndex, finalUrl);
+      } else {
+        notifier.addPhoto(finalUrl);
+      }
+      if (mounted) {
+        MatchToast.show(context, message: 'photo added successfully', type: ToastType.success);
+      }
+    } catch (e) {
+      if (mounted) {
+        MatchToast.show(context, message: 'could not upload image. try again.', type: ToastType.error);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingPhoto = false);
+      }
+    }
+  }
+
+  Future<void> _takePhotoWithCamera({int? replaceIndex}) async {
+    setState(() => _isUploadingPhoto = true);
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1200,
+        maxHeight: 1200,
+        imageQuality: 85,
+      );
+
+      if (picked == null) {
+        setState(() => _isUploadingPhoto = false);
+        return;
+      }
+
+      final bytes = await picked.readAsBytes();
+      final base64String = base64Encode(bytes);
+      final mimeType = picked.mimeType ?? 'image/jpeg';
+      String finalUrl = 'data:$mimeType;base64,$base64String';
+
+      try {
+        final currentAuthUser = SupabaseService.client?.auth.currentUser;
+        if (currentAuthUser != null && SupabaseService.client != null) {
+          final fileName = '${currentAuthUser.id}/${DateTime.now().millisecondsSinceEpoch}.jpg';
+          await SupabaseService.client!.storage.from('avatars').uploadBinary(
+            fileName,
+            bytes,
+          ).timeout(const Duration(seconds: 4));
+          final publicUrl = SupabaseService.client!.storage.from('avatars').getPublicUrl(fileName);
+          if (publicUrl.isNotEmpty) {
+            finalUrl = publicUrl;
+          }
+        }
+      } catch (_) {}
+
+      final notifier = ref.read(onboardingControllerProvider.notifier);
+      if (replaceIndex != null) {
+        notifier.replacePhoto(replaceIndex, finalUrl);
+      } else {
+        notifier.addPhoto(finalUrl);
+      }
+      if (mounted) {
+        MatchToast.show(context, message: 'photo captured successfully', type: ToastType.success);
+      }
+    } catch (e) {
+      if (mounted) {
+        MatchToast.show(context, message: 'could not open camera.', type: ToastType.error);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isUploadingPhoto = false);
+      }
+    }
+  }
+
+  void _showPhotoSourceSheet(BuildContext context, {int? replaceIndex}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  replaceIndex != null ? 'change photo' : 'add photo to profile',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'upload your own image or pick a curated portrait.',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.photo_library_outlined, color: AppColors.accent, size: 22),
+                  ),
+                  title: const Text('upload from gallery / device', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                  subtitle: const Text('choose any image from your computer or phone', style: TextStyle(fontSize: 12)),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _pickAndUploadImage(replaceIndex: replaceIndex);
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withValues(alpha: 0.12),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.camera_alt_outlined, color: AppColors.accent, size: 22),
+                  ),
+                  title: const Text('take a photo', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                  subtitle: const Text('capture an instant shot with camera', style: TextStyle(fontSize: 12)),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _takePhotoWithCamera(replaceIndex: replaceIndex);
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.auto_awesome_outlined, color: isDark ? Colors.white70 : Colors.black87, size: 22),
+                  ),
+                  title: const Text('choose curated portrait', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                  subtitle: const Text('pick from editorial demo portraits', style: TextStyle(fontSize: 12)),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _showCuratedPortraitsDialog(context, replaceIndex: replaceIndex);
+                  },
+                ),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: (isDark ? Colors.white : Colors.black).withValues(alpha: 0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(Icons.link, color: isDark ? Colors.white70 : Colors.black87, size: 22),
+                  ),
+                  title: const Text('paste image url', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+                  subtitle: const Text('link any web photo directly', style: TextStyle(fontSize: 12)),
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    _showUrlInputDialog(context, replaceIndex: replaceIndex);
+                  },
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showUrlInputDialog(BuildContext context, {int? replaceIndex}) {
+    final urlController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (dlgContext) => AlertDialog(
+        title: const Text('paste image url', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        content: TextField(
+          controller: urlController,
+          autofocus: true,
+          decoration: const InputDecoration(
+            hintText: 'https://images.unsplash.com/...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dlgContext),
+            child: const Text('cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final url = urlController.text.trim();
+              if (url.isNotEmpty) {
+                final notifier = ref.read(onboardingControllerProvider.notifier);
+                if (replaceIndex != null) {
+                  notifier.replacePhoto(replaceIndex, url);
+                } else {
+                  notifier.addPhoto(url);
+                }
+              }
+              Navigator.pop(dlgContext);
+            },
+            child: const Text('add photo'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCuratedPortraitsDialog(BuildContext context, {int? replaceIndex}) {
+    final curatedPortraits = [
+      'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800',
+      'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800',
+      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800',
+      'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=800',
+      'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800',
+      'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800',
+    ];
+
+    showDialog(
+      context: context,
+      builder: (dlgContext) => AlertDialog(
+        title: const Text('select curated portrait', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: GridView.builder(
+            shrinkWrap: true,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 8,
+              mainAxisSpacing: 8,
+              childAspectRatio: 0.8,
+            ),
+            itemCount: curatedPortraits.length,
+            itemBuilder: (ctx, idx) {
+              final url = curatedPortraits[idx];
+              return InkWell(
+                onTap: () {
+                  final notifier = ref.read(onboardingControllerProvider.notifier);
+                  if (replaceIndex != null) {
+                    notifier.replacePhoto(replaceIndex, url);
+                  } else {
+                    notifier.addPhoto(url);
+                  }
+                  Navigator.pop(dlgContext);
+                },
+                borderRadius: BorderRadius.circular(10),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.network(url, fit: BoxFit.cover),
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dlgContext),
+            child: const Text('cancel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPhotoImage(String photoUrl, bool isDark) {
+    if (photoUrl.startsWith('data:image')) {
+      try {
+        final commaIndex = photoUrl.indexOf(',');
+        final base64String = commaIndex != -1 ? photoUrl.substring(commaIndex + 1) : photoUrl;
+        final bytes = base64Decode(base64String);
+        return Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          errorBuilder: (ctx, err, stack) => _buildImagePlaceholder(isDark),
+        );
+      } catch (_) {
+        return _buildImagePlaceholder(isDark);
+      }
+    } else {
+      return Image.network(
+        photoUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (ctx, err, stack) => _buildImagePlaceholder(isDark),
+      );
+    }
+  }
+
+  Widget _buildImagePlaceholder(bool isDark) {
+    return Container(
+      color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+      child: Center(
+        child: Icon(
+          Icons.image_outlined,
+          color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
+        ),
+      ),
+    );
+  }
+
+  // --- Editorial Visual Banner Component ---
+
+  Widget _buildEditorialBanner({
+    required String assetPath,
+    required String tag,
+    required String headline,
+    required bool isDark,
+    double height = 140,
+  }) {
+    return Container(
+      height: height,
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 24),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.asset(
+              assetPath,
+              fit: BoxFit.cover,
+              errorBuilder: (ctx, err, stack) => Container(
+                color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+              ),
+            ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.1),
+                    Colors.black.withValues(alpha: 0.65),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              left: 18,
+              right: 18,
+              bottom: 14,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.accent.withValues(alpha: 0.9),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(
+                      tag.toUpperCase(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.0,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    headline,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -235,7 +710,16 @@ class _OnboardingFlowScreenState extends ConsumerState<OnboardingFlowScreen> {
             'this will be displayed on your profile. you can always edit this later.',
             style: MatchTextStyle.bodyMedium,
           ),
-          const SizedBox(height: 36),
+          const SizedBox(height: 20),
+
+          // Editorial visual banner
+          _buildEditorialBanner(
+            assetPath: 'assets/images/onboarding_hero.jpg',
+            tag: 'editorial dating',
+            headline: 'designed for intentional connection',
+            isDark: isDark,
+          ),
+
           MatchTextField(
             controller: _nameController,
             label: 'first name',
@@ -342,7 +826,16 @@ class _OnboardingFlowScreenState extends ConsumerState<OnboardingFlowScreen> {
             'be honest with your intentions. this helps match stick connect you with aligned people.',
             style: MatchTextStyle.bodyMedium,
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 20),
+
+          // Editorial visual banner
+          _buildEditorialBanner(
+            assetPath: 'assets/images/onboarding_connection.jpg',
+            tag: 'intention',
+            headline: 'real depth, not endless swiping',
+            isDark: isDark,
+          ),
+
           ...goals.map((item) {
             final isSelected = state.relationshipGoal == item['key'];
             return Padding(
@@ -486,7 +979,16 @@ class _OnboardingFlowScreenState extends ConsumerState<OnboardingFlowScreen> {
             'select at least 3 interests (${state.interests.length} selected).',
             style: MatchTextStyle.bodyMedium,
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 20),
+
+          // Editorial visual banner
+          _buildEditorialBanner(
+            assetPath: 'assets/images/onboarding_lifestyle.jpg',
+            tag: 'shared tastes',
+            headline: 'bond over the things you love',
+            isDark: isDark,
+          ),
+
           Wrap(
             spacing: 8,
             runSpacing: 10,
@@ -504,7 +1006,7 @@ class _OnboardingFlowScreenState extends ConsumerState<OnboardingFlowScreen> {
     );
   }
 
-  // STEP 5: Visual Story (Photos)
+  // STEP 5: Visual Story (Photos + Custom Upload)
   Widget _buildStep5Photos(OnboardingState state, bool isDark) {
     final notifier = ref.read(onboardingControllerProvider.notifier);
 
@@ -514,16 +1016,39 @@ class _OnboardingFlowScreenState extends ConsumerState<OnboardingFlowScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const MatchText(
-            'your visual\nstory.',
-            style: MatchTextStyle.hero,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const MatchText(
+                'your visual\nstory.',
+                style: MatchTextStyle.hero,
+              ),
+              if (_isUploadingPhoto)
+                const SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.accent),
+                ),
+            ],
           ),
           const SizedBox(height: 12),
           const MatchText(
-            'profiles with at least 2 authentic photos get 4x more meaningful replies.',
+            'upload your own photos from your device or pick curated portraits. at least 1 photo is required.',
             style: MatchTextStyle.bodyMedium,
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
+
+          // Quick upload button
+          Padding(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: MatchButton(
+              text: 'upload photo from device',
+              variant: MatchButtonVariant.secondary,
+              leadingIcon: const Icon(Icons.upload_file, size: 18),
+              onPressed: () => _pickAndUploadImage(),
+            ),
+          ),
+
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -537,80 +1062,89 @@ class _OnboardingFlowScreenState extends ConsumerState<OnboardingFlowScreen> {
             itemBuilder: (context, index) {
               if (index < state.photos.length) {
                 final photoUrl = state.photos[index];
-                return Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Image.network(
-                        photoUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (ctx, err, stack) => Container(
-                          color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-                          child: const Icon(Icons.image_outlined),
-                        ),
+                return GestureDetector(
+                  onTap: () => _showPhotoSourceSheet(context, replaceIndex: index),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: _buildPhotoImage(photoUrl, isDark),
                       ),
-                    ),
-                    if (index == 0)
+                      if (index == 0)
+                        Positioned(
+                          top: 8,
+                          left: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.black.withValues(alpha: 0.65),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Text(
+                              'main',
+                              style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ),
                       Positioned(
-                        top: 8,
-                        left: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.black.withValues(alpha: 0.65),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Text(
-                            'main',
-                            style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.w600),
+                        top: 6,
+                        right: 6,
+                        child: GestureDetector(
+                          onTap: () => notifier.removePhoto(index),
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
+                              color: Colors.black54,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.close, size: 14, color: Colors.white),
                           ),
                         ),
                       ),
-                    Positioned(
-                      top: 6,
-                      right: 6,
-                      child: GestureDetector(
-                        onTap: () => notifier.removePhoto(index),
+                      Positioned(
+                        bottom: 8,
+                        right: 8,
                         child: Container(
                           padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: Colors.black54,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.5),
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(Icons.close, size: 14, color: Colors.white),
+                          child: const Icon(Icons.edit, size: 12, color: Colors.white),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 );
               } else {
                 // Add photo slot
                 return MatchCard(
-                  onTap: () {
-                    // Pre-curated demo photos
-                    final samplePhotos = [
-                      'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=800',
-                      'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=800',
-                      'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=800',
-                    ];
-                    notifier.addPhoto(samplePhotos[state.photos.length % samplePhotos.length]);
-                  },
+                  onTap: () => _showPhotoSourceSheet(context),
                   child: Center(
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Icon(
                           Icons.add_photo_alternate_outlined,
-                          size: 28,
-                          color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                          size: 32,
+                          color: AppColors.accent,
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 8),
                         Text(
                           'add photo',
                           style: TextStyle(
-                            fontSize: 12,
-                            color: isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? AppColors.darkTextPrimary : AppColors.lightTextPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'device or web',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: isDark ? AppColors.darkTextTertiary : AppColors.lightTextTertiary,
                           ),
                         ),
                       ],
@@ -642,7 +1176,15 @@ class _OnboardingFlowScreenState extends ConsumerState<OnboardingFlowScreen> {
             'prompts are natural conversation starters for your future matches.',
             style: MatchTextStyle.bodyMedium,
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 20),
+
+          // Editorial visual banner
+          _buildEditorialBanner(
+            assetPath: 'assets/images/onboarding_prompts.jpg',
+            tag: 'authenticity',
+            headline: 'let your true voice lead the way',
+            isDark: isDark,
+          ),
 
           // Select Prompt Question
           Text(

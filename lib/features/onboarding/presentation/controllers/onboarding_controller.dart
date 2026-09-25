@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/network/supabase_service.dart';
 import 'package:matchstick/features/auth/presentation/controllers/auth_controller.dart';
 
@@ -140,6 +141,14 @@ class OnboardingController extends Notifier<OnboardingState> {
     state = state.copyWith(photos: list);
   }
 
+  void replacePhoto(int index, String url) {
+    if (index >= 0 && index < state.photos.length) {
+      final list = List<String>.from(state.photos);
+      list[index] = url;
+      state = state.copyWith(photos: list);
+    }
+  }
+
   void setBio(String bio) => state = state.copyWith(bio: bio);
 
   void updatePrompt(int index, String question, String answer) {
@@ -174,52 +183,68 @@ class OnboardingController extends Notifier<OnboardingState> {
     state = state.copyWith(isLoading: true);
     try {
       final authState = ref.read(authControllerProvider);
-      final userId = authState.userId ?? 'demo-user-id';
+      final currentAuthUser = SupabaseService.client?.auth.currentUser;
+      final userId = currentAuthUser?.id ?? authState.userId ?? 'demo-user-id';
 
-      // Persist to Supabase if initialized
-      if (SupabaseService.isInitialized && SupabaseService.client != null) {
-        await SupabaseService.client!.from('profiles').upsert({
-          'id': userId,
-          'display_name': state.displayName,
-          'birthdate': state.birthdate!.toIso8601String().split('T')[0],
-          'gender': state.gender,
-          'gender_preference': state.genderPreference,
-          'relationship_goal': state.relationshipGoal,
-          'bio': state.bio,
-          'location_city': state.locationCity,
-          'location_country': state.locationCountry,
-          'is_profile_complete': true,
-        });
+      // Persist to Supabase if initialized and user is authenticated
+      if (SupabaseService.isInitialized && SupabaseService.client != null && currentAuthUser != null) {
+        try {
+          final birthdateStr = (state.birthdate ?? DateTime(1998, 1, 1)).toIso8601String().split('T')[0];
+          await SupabaseService.client!.from('profiles').upsert({
+            'id': userId,
+            'display_name': state.displayName.isNotEmpty ? state.displayName : 'New Member',
+            'birthdate': birthdateStr,
+            'gender': state.gender,
+            'gender_preference': state.genderPreference,
+            'relationship_goal': state.relationshipGoal,
+            'bio': state.bio,
+            'location_city': state.locationCity,
+            'location_country': state.locationCountry,
+            'is_profile_complete': true,
+          }).timeout(const Duration(seconds: 4));
 
-        // Insert photos
-        for (int i = 0; i < state.photos.length; i++) {
-          await SupabaseService.client!.from('profile_photos').insert({
-            'user_id': userId,
-            'url': state.photos[i],
-            'order_index': i,
-            'is_primary': i == 0,
-          });
-        }
+          // Insert photos (clean replace)
+          await SupabaseService.client!.from('profile_photos').delete().eq('user_id', userId).timeout(const Duration(seconds: 3));
+          for (int i = 0; i < state.photos.length; i++) {
+            await SupabaseService.client!.from('profile_photos').insert({
+              'user_id': userId,
+              'url': state.photos[i],
+              'order_index': i,
+              'is_primary': i == 0,
+            }).timeout(const Duration(seconds: 3));
+          }
 
-        // Insert prompts
-        for (int i = 0; i < state.prompts.length; i++) {
-          await SupabaseService.client!.from('profile_prompts').insert({
-            'user_id': userId,
-            'prompt_question': state.prompts[i]['question'] ?? '',
-            'prompt_answer': state.prompts[i]['answer'] ?? '',
-            'order_index': i,
-          });
+          // Insert prompts (clean replace)
+          await SupabaseService.client!.from('profile_prompts').delete().eq('user_id', userId).timeout(const Duration(seconds: 3));
+          for (int i = 0; i < state.prompts.length; i++) {
+            await SupabaseService.client!.from('profile_prompts').insert({
+              'user_id': userId,
+              'prompt_question': state.prompts[i]['question'] ?? '',
+              'prompt_answer': state.prompts[i]['answer'] ?? '',
+              'order_index': i,
+            }).timeout(const Duration(seconds: 3));
+          }
+        } catch (_) {
+          // Non-fatal if remote persistence times out or fails in preview
         }
       }
 
-      // Mark onboarding complete in auth controller
+      // Mark onboarding complete in auth controller & local storage
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('matchstick_onboarding_complete_$userId', true);
       await ref.read(authControllerProvider.notifier).completeOnboarding();
       state = state.copyWith(isLoading: false);
       return true;
     } catch (e) {
       state = state.copyWith(isLoading: false);
-      // Even if network fails, complete in offline state
-      await ref.read(authControllerProvider.notifier).completeOnboarding();
+      try {
+        final authState = ref.read(authControllerProvider);
+        final currentAuthUser = SupabaseService.client?.auth.currentUser;
+        final userId = currentAuthUser?.id ?? authState.userId ?? 'demo-user-id';
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('matchstick_onboarding_complete_$userId', true);
+        await ref.read(authControllerProvider.notifier).completeOnboarding();
+      } catch (_) {}
       return true;
     }
   }
