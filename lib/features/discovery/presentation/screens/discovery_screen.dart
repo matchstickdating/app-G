@@ -7,9 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/motion/motion_tokens.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../../../core/widgets/match_button.dart';
 import '../../../../core/widgets/match_loading_indicator.dart';
-import '../../../../core/widgets/match_text.dart';
 import '../../../chat/presentation/screens/chat_conversation_screen.dart';
 import '../../../matching/presentation/widgets/match_celebration_dialog.dart';
 import '../../../profile/presentation/controllers/profile_controller.dart';
@@ -28,7 +26,6 @@ class DiscoveryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(discoveryControllerProvider);
     final myProfile = ref.watch(profileControllerProvider).profile;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Listen for mutual match detection to trigger celebration modal
     ref.listen(discoveryControllerProvider, (prev, next) {
@@ -61,7 +58,9 @@ class DiscoveryScreen extends ConsumerWidget {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: hasPhoto ? const Color(0xFF101311) : null,
+        backgroundColor: hasPhoto || !state.isLoading
+            ? const Color(0xFF101A1C)
+            : null,
         body: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 600),
@@ -75,7 +74,9 @@ class DiscoveryScreen extends ConsumerWidget {
                   child: SizedBox(
                     height: math.max(
                       constraints.maxHeight,
-                      680 + textExtra * 4,
+                      hasPhoto || state.isLoading
+                          ? 680 + textExtra * 4
+                          : 900 + textExtra * 26,
                     ),
                     child: ClipRect(
                       child: Stack(
@@ -149,19 +150,18 @@ class DiscoveryScreen extends ConsumerWidget {
                                 );
                               },
                             )
-                          else
+                          else if (state.isLoading)
                             Padding(
                               padding: const EdgeInsets.only(top: 150),
-                              child: state.isLoading
-                                  ? const Center(
-                                      child: MatchLoadingIndicator(
-                                        type: MatchLoadingType.thinking,
-                                        message:
-                                            'curating intentional profiles...',
-                                      ),
-                                    )
-                                  : _buildEmptyState(context, ref, isDark),
-                            ),
+                              child: const Center(
+                                child: MatchLoadingIndicator(
+                                  type: MatchLoadingType.thinking,
+                                  message: 'curating intentional profiles...',
+                                ),
+                              ),
+                            )
+                          else
+                            _buildEmptyState(context, ref, state),
                           Positioned(
                             top: 0,
                             left: 0,
@@ -232,59 +232,146 @@ class DiscoveryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildEmptyState(BuildContext context, WidgetRef ref, bool isDark) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 36),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppColors.primary.withValues(alpha: 0.08),
-                border: Border.all(
-                  color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
-                ),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.auto_awesome,
-                  size: 32,
-                  color: AppColors.primary,
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            const MatchText(
-              'nothing here yet.',
-              style: MatchTextStyle.headingMedium,
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'your next conversation could start tomorrow. we deliberately curate profiles to prevent mindless swiping.',
-              style: AppTypography.bodyMedium(
-                color: isDark
-                    ? AppColors.darkTextSecondary
-                    : AppColors.lightTextSecondary,
-              ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 28),
-            MatchButton(
-              text: 'curate again',
-              isFullWidth: false,
-              variant: MatchButtonVariant.outline,
-              onPressed: () {
-                ref.read(discoveryControllerProvider.notifier).loadFeed();
-              },
-            ),
-          ],
+  Widget _buildEmptyState(
+    BuildContext context,
+    WidgetRef ref,
+    DiscoveryState state,
+  ) {
+    final isPicks = state.isTodaysPicksMode;
+    final hasSeenProfiles = isPicks
+        ? state.todaysPicks.isNotEmpty
+        : state.cards.isNotEmpty;
+    final title = isPicks
+        ? "Today's picks are on their way."
+        : hasSeenProfiles
+        ? "You've met everyone for now."
+        : 'A good connection takes time.';
+    final description = isPicks
+        ? "We're choosing a few people worth meeting. Check back soon."
+        : hasSeenProfiles
+        ? 'New faces will appear here as they join. Take a moment to explore the rest of Matchstick.'
+        : "We're looking for people who feel right for you. Check back soon for new introductions.";
+
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF263A32), Color(0xFF101A1C)],
         ),
       ),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(28, 178, 28, 118),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'DISCOVERY · YOUR PACE',
+                style: AppTypography.caption(color: Colors.white70)
+                    .copyWith(letterSpacing: 2.2, fontWeight: FontWeight.w700),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: 168,
+                height: 142,
+                child: Stack(
+                  children: [
+                    Positioned(
+                      left: 0,
+                      top: 0,
+                      child: _emptyPortrait(
+                        const Color(0xFF526F65),
+                        Colors.white,
+                      ),
+                    ),
+                    Positioned(
+                      right: 0,
+                      top: 16,
+                      child: _emptyPortrait(
+                        const Color(0xFF344E4D),
+                        Colors.white70,
+                      ),
+                    ),
+                    Positioned(
+                      left: 56,
+                      bottom: 0,
+                      child: Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          color: AppColors.accent,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFF1B2929),
+                            width: 4,
+                          ),
+                        ),
+                        child: const Icon(
+                          Icons.favorite_rounded,
+                          color: Colors.white,
+                          size: 25,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 330),
+                child: Text(
+                  title,
+                  style: AppTypography.headingLarge(color: Colors.white)
+                      .copyWith(height: 1.07),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 12),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 320),
+                child: Text(
+                  description,
+                  style: AppTypography.bodyMedium(color: Colors.white70)
+                      .copyWith(height: 1.45),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(height: 26),
+              FilledButton.icon(
+                onPressed: () =>
+                    ref.read(discoveryControllerProvider.notifier).loadFeed(),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.accent,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(0, 52),
+                  padding: const EdgeInsets.symmetric(horizontal: 22),
+                  shape: const StadiumBorder(),
+                ),
+                icon: const Icon(Icons.refresh_rounded, size: 20),
+                label: Text(
+                  isPicks ? 'refresh picks' : 'refresh profiles',
+                  style: AppTypography.button(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _emptyPortrait(Color background, Color foreground) {
+    return Container(
+      width: 110,
+      height: 110,
+      decoration: BoxDecoration(
+        color: background,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white24),
+      ),
+      child: Icon(Icons.person_rounded, color: foreground, size: 64),
     );
   }
 }

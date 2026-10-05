@@ -35,6 +35,18 @@ class _Discovery extends DiscoveryController {
   );
 }
 
+class _EmptyDiscovery extends DiscoveryController {
+  int refreshCalls = 0;
+
+  @override
+  DiscoveryState build() => const DiscoveryState();
+
+  @override
+  Future<void> loadFeed() async {
+    refreshCalls++;
+  }
+}
+
 class _Profile extends ProfileController {
   @override
   ProfileState build() => ProfileState(profile: _profile);
@@ -42,6 +54,73 @@ class _Profile extends ProfileController {
 
 void main() {
   setUp(() => GoogleFonts.config.allowRuntimeFetching = false);
+
+  testWidgets('empty discovery offers clear feedback and a reachable refresh', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          discoveryControllerProvider.overrideWith(_EmptyDiscovery.new),
+          profileControllerProvider.overrideWith(_Profile.new),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const MainNavigationShell(),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.text('A good connection takes time.'), findsOneWidget);
+    expect(find.text('refresh profiles'), findsOneWidget);
+    await tester.ensureVisible(find.text('refresh profiles'));
+    await tester.pump();
+    expect(find.text('refresh profiles').hitTestable(), findsOneWidget);
+    await tester.tap(find.text('refresh profiles'));
+    await tester.pump();
+    final context = tester.element(find.byType(DiscoveryScreen));
+    final controller = ProviderScope.containerOf(context)
+        .read(discoveryControllerProvider.notifier);
+    expect((controller as _EmptyDiscovery).refreshCalls, 1);
+    await tester.ensureVisible(find.text("Today's picks"));
+    await tester.tap(find.text("Today's picks"));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text("Today's picks are on their way."), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('empty discovery stays usable with large text', (tester) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          discoveryControllerProvider.overrideWith(_EmptyDiscovery.new),
+          profileControllerProvider.overrideWith(_Profile.new),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: const TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: const MainNavigationShell(),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.ensureVisible(find.text('refresh profiles'));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('refresh profiles').hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   for (final size in [const Size(320, 568), const Size(390, 844)]) {
     for (final scale in [1.0, 2.0]) {
