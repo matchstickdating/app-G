@@ -50,7 +50,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
 
     expect(find.byType(DiscoveryScreen), findsOneWidget);
-    expect(find.text('intentional discovery.'), findsOneWidget);
+    expect(find.text("Today's picks"), findsOneWidget);
   });
 
   testWidgets('LikesScreen renders incoming likes', (WidgetTester tester) async {

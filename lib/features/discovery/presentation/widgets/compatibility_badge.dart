@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/match_bottom_sheet.dart';
@@ -17,8 +18,14 @@ class CompatibilityBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return TextButton(
+      style: TextButton.styleFrom(
+        padding: EdgeInsets.zero,
+        minimumSize: const Size(48, 48),
+        foregroundColor: Colors.white,
+      ),
+      onPressed: () {
         MatchBottomSheet.show(
           context: context,
           child: Padding(
@@ -27,10 +34,16 @@ class CompatibilityBadge extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.accent.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(12),
@@ -44,10 +57,14 @@ class CompatibilityBadge extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const Spacer(),
-                    const Text(
+                    Text(
                       'verified compatibility',
-                      style: TextStyle(fontSize: 12, color: AppColors.lightTextTertiary),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isDark
+                            ? AppColors.darkTextTertiary
+                            : AppColors.lightTextTertiary,
+                      ),
                     ),
                   ],
                 ),
@@ -58,23 +75,33 @@ class CompatibilityBadge extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
                 if (reasons.isNotEmpty) ...[
-                  ...reasons.map((reason) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('• ', style: TextStyle(fontSize: 16, color: AppColors.accent)),
-                            Expanded(
-                              child: Text(
-                                reason.toLowerCase(),
-                                style: AppTypography.bodyLarge(),
-                              ),
+                  ...reasons.map(
+                    (reason) => Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '• ',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: AppColors.accent,
                             ),
-                          ],
-                        ),
-                      )),
+                          ),
+                          Expanded(
+                            child: Text(
+                              reason.toLowerCase(),
+                              style: AppTypography.bodyLarge(),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ] else ...[
-                  const Text('• aligned lifestyle goals and mutual aesthetic interests.'),
+                  const Text(
+                    '• aligned lifestyle goals and mutual aesthetic interests.',
+                  ),
                   const Text('• active in the same geographical neighborhood.'),
                 ],
                 const SizedBox(height: 28),
@@ -90,19 +117,20 @@ class CompatibilityBadge extends StatelessWidget {
         );
       },
       child: Container(
+        constraints: const BoxConstraints(minHeight: 48),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(20),
+          color: const Color(0x33212622),
+          borderRadius: BorderRadius.circular(24),
           border: Border.all(color: Colors.white24, width: 0.8),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.auto_awesome, size: 13, color: AppColors.accent),
+            const Icon(Icons.auto_awesome, size: 16, color: Colors.white),
             const SizedBox(width: 5),
             Text(
-              '$score% compatible',
+              '$score% match',
               style: const TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,

@@ -13,6 +13,7 @@ import '../../../monetization/presentation/screens/paywall_screen.dart';
 import '../../../safety/presentation/screens/safety_center_screen.dart';
 import '../../../safety/presentation/widgets/report_modal.dart';
 import '../controllers/profile_controller.dart';
+import '../../domain/entities/profile_entity.dart';
 import '../widgets/profile_completeness_badge.dart';
 import '../widgets/profile_photo_carousel.dart';
 import '../widgets/profile_prompt_card.dart';
@@ -20,11 +21,13 @@ import 'edit_profile_screen.dart';
 
 class ProfileDetailScreen extends ConsumerWidget {
   final bool isMyProfile;
+  final ProfileEntity? viewedProfile;
   final VoidCallback? onBack;
 
   const ProfileDetailScreen({
     super.key,
     this.isMyProfile = true,
+    this.viewedProfile,
     this.onBack,
   });
 
@@ -32,7 +35,7 @@ class ProfileDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileState = ref.watch(profileControllerProvider);
     final isStudioMember = ref.watch(subscriptionControllerProvider).isStudioMember;
-    final profile = profileState.profile;
+    final profile = viewedProfile ?? profileState.profile;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     if (profileState.isLoading && profile == null) {
