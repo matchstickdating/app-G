@@ -75,7 +75,7 @@ class DiscoveryScreen extends ConsumerWidget {
                   child: SizedBox(
                     height: math.max(
                       constraints.maxHeight,
-                      500 + textExtra * 4,
+                      680 + textExtra * 4,
                     ),
                     child: ClipRect(
                       child: Stack(

@@ -174,7 +174,7 @@ class _DiscoveryCardState extends State<DiscoveryCard>
                 ),
               Positioned(
                 left: 20,
-                right: 92,
+                right: 20,
                 bottom: 24,
                 child: SafeArea(
                   top: false,
@@ -182,6 +182,33 @@ class _DiscoveryCardState extends State<DiscoveryCard>
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _glassAction(
+                              'View profile',
+                              Icons.person_outline_rounded,
+                              widget.onTap,
+                            ),
+                            const SizedBox(height: 12),
+                            _glassAction(
+                              'Pass',
+                              Icons.close_rounded,
+                              widget.onSwipeLeft,
+                            ),
+                            const SizedBox(height: 12),
+                            _glassAction(
+                              'Like',
+                              Icons.favorite_rounded,
+                              widget.onSwipeRight,
+                              primary: true,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 18),
                       CompatibilityBadge(
                         score: card.compatibilityScore,
                         reasons: card.compatibilityReasons,
@@ -287,42 +314,6 @@ class _DiscoveryCardState extends State<DiscoveryCard>
                             ),
                           ),
                         ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Positioned(
-                right: 18,
-                bottom: 24,
-                child: SafeArea(
-                  top: false,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _glassAction(
-                        'View profile',
-                        Icons.person_outline_rounded,
-                        widget.onTap,
-                      ),
-                      const SizedBox(height: 12),
-                      _glassAction(
-                        'Super like',
-                        Icons.bolt_rounded,
-                        widget.onSwipeUp,
-                      ),
-                      const SizedBox(height: 12),
-                      _glassAction(
-                        'Pass',
-                        Icons.close_rounded,
-                        widget.onSwipeLeft,
-                      ),
-                      const SizedBox(height: 12),
-                      _glassAction(
-                        'Like',
-                        Icons.favorite_rounded,
-                        widget.onSwipeRight,
-                        primary: true,
                       ),
                     ],
                   ),

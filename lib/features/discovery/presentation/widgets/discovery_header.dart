@@ -39,13 +39,17 @@ class DiscoveryHeader extends StatelessWidget {
             children: [
               Material(
                 color: Colors.white.withValues(alpha: .18),
-                shape: const StadiumBorder(
+                shape: const CircleBorder(
                   side: BorderSide(color: Colors.white24),
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: InkWell(
-                  onTap: () =>
-                      open(const ProfileDetailScreen(isMyProfile: true)),
+                  onTap: () => open(
+                    ProfileDetailScreen(
+                      isMyProfile: true,
+                      onBack: () => Navigator.of(context).pop(),
+                    ),
+                  ),
                   child: Tooltip(
                     message: 'My profile',
                     child: Semantics(
@@ -53,43 +57,31 @@ class DiscoveryHeader extends StatelessWidget {
                       label: 'My profile',
                       child: Padding(
                         padding: const EdgeInsets.all(7),
-                        child: Row(
-                          children: [
-                            ClipOval(
-                              child: SizedBox(
-                                width: 34,
-                                height: 34,
-                                child: profile?.primaryPhotoUrl == null
-                                    ? const ColoredBox(
-                                        color: Color(0xFF66736C),
-                                        child: Icon(
-                                          Icons.person_rounded,
-                                          color: Colors.white,
-                                          size: 22,
-                                        ),
-                                      )
-                                    : FittedBox(
-                                        fit: BoxFit.cover,
-                                        child: SizedBox(
-                                          width: 160,
-                                          height: 200,
-                                          child: ProfilePhoto(
-                                            url: profile!.primaryPhotoUrl,
-                                            name: profile!.displayName,
-                                          ),
-                                        ),
+                        child: ClipOval(
+                          child: SizedBox(
+                            width: 34,
+                            height: 34,
+                            child: profile?.primaryPhotoUrl == null
+                                ? const ColoredBox(
+                                    color: Color(0xFF66736C),
+                                    child: Icon(
+                                      Icons.person_rounded,
+                                      color: Colors.white,
+                                      size: 22,
+                                    ),
+                                  )
+                                : FittedBox(
+                                    fit: BoxFit.cover,
+                                    child: SizedBox(
+                                      width: 160,
+                                      height: 200,
+                                      child: ProfilePhoto(
+                                        url: profile!.primaryPhotoUrl,
+                                        name: profile!.displayName,
                                       ),
-                              ),
-                            ),
-                            const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 6),
-                              child: Icon(
-                                Icons.add_rounded,
-                                size: 19,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ],
+                                    ),
+                                  ),
+                          ),
                         ),
                       ),
                     ),

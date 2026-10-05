@@ -9,6 +9,7 @@ import 'package:matchstick/features/discovery/presentation/controllers/discovery
 import 'package:matchstick/features/discovery/presentation/screens/discovery_screen.dart';
 import 'package:matchstick/features/discovery/presentation/widgets/discovery_card.dart';
 import 'package:matchstick/features/discovery/presentation/widgets/discovery_header.dart';
+import 'package:matchstick/features/discovery/presentation/widgets/compatibility_badge.dart';
 import 'package:matchstick/features/profile/domain/entities/profile_entity.dart';
 import 'package:matchstick/features/profile/presentation/controllers/profile_controller.dart';
 
@@ -82,6 +83,22 @@ void main() {
           tester.getBottomLeft(find.byType(DiscoveryHeader)).dy,
           lessThan(tester.getTopLeft(find.text('Alexandra')).dy),
         );
+        expect(find.byTooltip('Super like'), findsNothing);
+        expect(
+          tester.getBottomRight(find.byTooltip('Like')).dy,
+          lessThan(tester.getTopLeft(find.byType(CompatibilityBadge)).dy),
+        );
+        expect(
+          tester.getBottomLeft(find.byType(DiscoveryHeader)).dy,
+          lessThan(tester.getTopLeft(find.byTooltip('View profile')).dy),
+        );
+        expect(
+          find.descendant(
+            of: find.byTooltip('My profile'),
+            matching: find.byIcon(Icons.add_rounded),
+          ),
+          findsNothing,
+        );
         final name = tester.getRect(find.text('Alexandra'));
         final age = tester.getRect(find.text('${_profile.age}'));
         expect(age.left - name.right, greaterThanOrEqualTo(12));
@@ -132,18 +149,18 @@ void main() {
         ),
       ),
     );
-    for (final label in ['Like', 'Pass', 'Super like', 'View profile']) {
+    for (final label in ['Like', 'Pass', 'View profile']) {
       await tester.tap(
         find.widgetWithIcon(IconButton, switch (label) {
           'Like' => Icons.favorite_rounded,
           'Pass' => Icons.close_rounded,
-          'Super like' => Icons.bolt_rounded,
           _ => Icons.person_outline_rounded,
         }),
       );
       await tester.pump();
     }
-    expect(calls, ['like', 'pass', 'super', 'profile']);
+    expect(calls, ['like', 'pass', 'profile']);
+    expect(find.byTooltip('Super like'), findsNothing);
     final likePosition = tester.getCenter(
       find.widgetWithIcon(IconButton, Icons.favorite_rounded),
     );
@@ -182,9 +199,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('main navigation uses a shared white pill across tabs', (
-    tester,
-  ) async {
+  testWidgets('main navigation uses four translucent tabs', (tester) async {
     tester.view.physicalSize = const Size(320, 568);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -203,22 +218,26 @@ void main() {
     );
     await tester.pump();
     expect(find.byKey(const Key('primary-navigation-pill')), findsOneWidget);
-    for (final label in [
-      'Discover',
-      'Likes',
-      'Community',
-      'Messages',
-      'Profile',
-    ]) {
+    expect(find.byType(BackdropFilter), findsWidgets);
+    await tester.tap(find.byTooltip('My profile'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.byTooltip('back'), findsOneWidget);
+    tester.state<NavigatorState>(find.byType(Navigator)).pop();
+    await tester.pump(const Duration(milliseconds: 500));
+    await tester.ensureVisible(find.text('Alexandra'));
+    await tester.pump();
+    expect(
+      tester.getBottomLeft(find.text('Alexandra')).dy,
+      lessThan(
+        tester.getTopLeft(find.byKey(const Key('primary-navigation-pill'))).dy,
+      ),
+    );
+    for (final label in ['Discover', 'Likes', 'Community', 'Messages']) {
       expect(find.byTooltip(label), findsOneWidget);
     }
-    for (final label in [
-      'Likes',
-      'Community',
-      'Messages',
-      'Profile',
-      'Discover',
-    ]) {
+    expect(find.byTooltip('Profile'), findsNothing);
+    for (final label in ['Likes', 'Community', 'Messages', 'Discover']) {
       await tester.tap(find.byTooltip(label));
       await tester.pump(const Duration(seconds: 1));
       expect(find.byKey(const Key('primary-navigation-pill')), findsOneWidget);
