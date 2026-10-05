@@ -23,12 +23,14 @@ class ProfileDetailScreen extends ConsumerWidget {
   final bool isMyProfile;
   final ProfileEntity? viewedProfile;
   final VoidCallback? onBack;
+  final Widget? bottomActions;
 
   const ProfileDetailScreen({
     super.key,
     this.isMyProfile = true,
     this.viewedProfile,
     this.onBack,
+    this.bottomActions,
   });
 
   @override
@@ -73,6 +75,7 @@ class ProfileDetailScreen extends ConsumerWidget {
     }
 
     return Scaffold(
+      bottomNavigationBar: bottomActions,
       body: CustomScrollView(
         slivers: [
           // Slivers App Bar with Carousel
@@ -81,6 +84,7 @@ class ProfileDetailScreen extends ConsumerWidget {
             pinned: true,
             leading: onBack != null
                 ? IconButton(
+                    tooltip: 'back',
                     icon: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: const BoxDecoration(
@@ -150,9 +154,11 @@ class ProfileDetailScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
                     children: [
-                      MatchText(
-                        profile.displayName.toLowerCase(),
-                        style: MatchTextStyle.hero,
+                      Flexible(
+                        child: MatchText(
+                          profile.displayName.toLowerCase(),
+                          style: MatchTextStyle.hero,
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Text(

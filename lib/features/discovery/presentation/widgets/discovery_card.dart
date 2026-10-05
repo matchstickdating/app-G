@@ -173,13 +173,14 @@ class _DiscoveryCardState extends State<DiscoveryCard>
                   ),
                 ),
               Positioned(
-                left: 24,
-                right: 24,
-                bottom: 16,
+                left: 20,
+                right: 92,
+                bottom: 24,
                 child: SafeArea(
                   top: false,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       CompatibilityBadge(
                         score: card.compatibilityScore,
@@ -187,7 +188,7 @@ class _DiscoveryCardState extends State<DiscoveryCard>
                       ),
                       const SizedBox(height: 4),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           Flexible(
                             child: Text(
@@ -204,7 +205,7 @@ class _DiscoveryCardState extends State<DiscoveryCard>
                                   ),
                             ),
                           ),
-                          const SizedBox(width: 6),
+                          const SizedBox(width: 14),
                           Text(
                             '${profile.age}',
                             style:
@@ -266,7 +267,7 @@ class _DiscoveryCardState extends State<DiscoveryCard>
                       ],
                       const SizedBox(height: 9),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           const Icon(
                             Icons.location_on_rounded,
@@ -276,7 +277,7 @@ class _DiscoveryCardState extends State<DiscoveryCard>
                           const SizedBox(width: 3),
                           Flexible(
                             child: Text(
-                              '${profile.locationCity ?? "Nearby"}${card.distanceKm != null ? " ? ${card.distanceKm!.toStringAsFixed(1)} km away" : ""}',
+                              '${profile.locationCity ?? "Nearby"}${card.distanceKm != null ? " · ${card.distanceKm!.toStringAsFixed(1)} km away" : ""}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
@@ -287,32 +288,41 @@ class _DiscoveryCardState extends State<DiscoveryCard>
                           ),
                         ],
                       ),
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _glassAction(
-                            'View profile',
-                            Icons.person_outline_rounded,
-                            widget.onTap,
-                          ),
-                          _glassAction(
-                            'Super like',
-                            Icons.bolt_rounded,
-                            widget.onSwipeUp,
-                          ),
-                          _glassAction(
-                            'Pass',
-                            Icons.close_rounded,
-                            widget.onSwipeLeft,
-                          ),
-                          _glassAction(
-                            'Like',
-                            Icons.favorite_rounded,
-                            widget.onSwipeRight,
-                            primary: true,
-                          ),
-                        ],
+                    ],
+                  ),
+                ),
+              ),
+              Positioned(
+                right: 18,
+                bottom: 24,
+                child: SafeArea(
+                  top: false,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _glassAction(
+                        'View profile',
+                        Icons.person_outline_rounded,
+                        widget.onTap,
+                      ),
+                      const SizedBox(height: 12),
+                      _glassAction(
+                        'Super like',
+                        Icons.bolt_rounded,
+                        widget.onSwipeUp,
+                      ),
+                      const SizedBox(height: 12),
+                      _glassAction(
+                        'Pass',
+                        Icons.close_rounded,
+                        widget.onSwipeLeft,
+                      ),
+                      const SizedBox(height: 12),
+                      _glassAction(
+                        'Like',
+                        Icons.favorite_rounded,
+                        widget.onSwipeRight,
+                        primary: true,
                       ),
                     ],
                   ),

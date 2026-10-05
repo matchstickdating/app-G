@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:matchstick/core/theme/app_theme.dart';
+import 'package:matchstick/core/routing/main_navigation_shell.dart';
 import 'package:matchstick/features/discovery/domain/entities/discovery_card_entity.dart';
 import 'package:matchstick/features/discovery/presentation/controllers/discovery_controller.dart';
 import 'package:matchstick/features/discovery/presentation/screens/discovery_screen.dart';
@@ -81,6 +82,9 @@ void main() {
           tester.getBottomLeft(find.byType(DiscoveryHeader)).dy,
           lessThan(tester.getTopLeft(find.text('Alexandra')).dy),
         );
+        final name = tester.getRect(find.text('Alexandra'));
+        final age = tester.getRect(find.text('${_profile.age}'));
+        expect(age.left - name.right, greaterThanOrEqualTo(12));
         await tester.ensureVisible(find.byTooltip('Like'));
         expect(find.byTooltip('Like').hitTestable(), findsOneWidget);
         await tester.ensureVisible(find.byTooltip('Discovery options'));
@@ -146,8 +150,79 @@ void main() {
     final passPosition = tester.getCenter(
       find.widgetWithIcon(IconButton, Icons.close_rounded),
     );
-    expect(likePosition.dy, closeTo(passPosition.dy, 1));
-    expect(likePosition.dy, greaterThan(480));
+    expect(likePosition.dx, closeTo(passPosition.dx, 1));
+    expect(likePosition.dy, greaterThan(passPosition.dy));
+    expect(likePosition.dx, greaterThan(260));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('profile detail opened from discovery has one back control', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          discoveryControllerProvider.overrideWith(_Discovery.new),
+          profileControllerProvider.overrideWith(_Profile.new),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const DiscoveryScreen(),
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.tap(find.byTooltip('View profile'));
+    await tester.pumpAndSettle();
+    expect(find.byTooltip('back'), findsOneWidget);
+    expect(find.byTooltip('close profile'), findsNothing);
+    expect(find.text('pass'), findsOneWidget);
+    expect(find.text('super like'), findsOneWidget);
+    expect(find.text('like'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('main navigation uses a shared white pill across tabs', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          discoveryControllerProvider.overrideWith(_Discovery.new),
+          profileControllerProvider.overrideWith(_Profile.new),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const MainNavigationShell(),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.byKey(const Key('primary-navigation-pill')), findsOneWidget);
+    for (final label in [
+      'Discover',
+      'Likes',
+      'Community',
+      'Messages',
+      'Profile',
+    ]) {
+      expect(find.byTooltip(label), findsOneWidget);
+    }
+    for (final label in [
+      'Likes',
+      'Community',
+      'Messages',
+      'Profile',
+      'Discover',
+    ]) {
+      await tester.tap(find.byTooltip(label));
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.byKey(const Key('primary-navigation-pill')), findsOneWidget);
+    }
     expect(tester.takeException(), isNull);
   });
 }

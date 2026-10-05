@@ -101,29 +101,13 @@ class DiscoveryScreen extends ConsumerWidget {
                                     .swipeUp();
                               },
                               onTap: () {
-                                // Open full editorial detail
                                 Navigator.of(context).push(
                                   MotionTokens.editorialPageRoute(
-                                    page: Scaffold(
-                                      appBar: AppBar(
-                                        leading: IconButton(
-                                          tooltip: 'close profile',
-                                          icon: const Icon(
-                                            Icons.close,
-                                            size: 20,
-                                          ),
-                                          onPressed: () =>
-                                              Navigator.of(context).pop(),
-                                        ),
-                                      ),
-                                      body: ProfileDetailScreen(
-                                        isMyProfile: false,
-                                        viewedProfile:
-                                            state.currentCard!.profile,
-                                        onBack: () =>
-                                            Navigator.of(context).pop(),
-                                      ),
-                                      bottomNavigationBar: SafeArea(
+                                    page: ProfileDetailScreen(
+                                      isMyProfile: false,
+                                      viewedProfile: state.currentCard!.profile,
+                                      onBack: () => Navigator.of(context).pop(),
+                                      bottomActions: SafeArea(
                                         child: Padding(
                                           padding: const EdgeInsets.symmetric(
                                             horizontal: 24,

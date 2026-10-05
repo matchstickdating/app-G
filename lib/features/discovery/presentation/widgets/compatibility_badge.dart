@@ -129,13 +129,17 @@ class CompatibilityBadge extends StatelessWidget {
           children: [
             const Icon(Icons.auto_awesome, size: 16, color: Colors.white),
             const SizedBox(width: 5),
-            Text(
-              '$score% match',
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-                letterSpacing: -0.01 * 12,
+            Flexible(
+              child: Text(
+                '$score% match',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                  letterSpacing: -0.01 * 12,
+                ),
               ),
             ),
           ],
