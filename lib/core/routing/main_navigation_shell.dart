@@ -64,10 +64,30 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                 ),
                 child: Row(
                   children: [
-                    _navItem(0, 'Discover', Icons.home_rounded),
-                    _navItem(1, 'Likes', Icons.check_circle_outline_rounded),
-                    _navItem(2, 'Community', Icons.calendar_month_outlined),
-                    _navItem(3, 'Messages', Icons.track_changes_outlined),
+                    _navItem(
+                      0,
+                      'Discover',
+                      Icons.explore_outlined,
+                      Icons.explore_rounded,
+                    ),
+                    _navItem(
+                      1,
+                      'Likes',
+                      Icons.favorite_border_rounded,
+                      Icons.favorite_rounded,
+                    ),
+                    _navItem(
+                      2,
+                      'Community',
+                      Icons.groups_outlined,
+                      Icons.groups_rounded,
+                    ),
+                    _navItem(
+                      3,
+                      'Messages',
+                      Icons.chat_bubble_outline_rounded,
+                      Icons.chat_bubble_rounded,
+                    ),
                   ],
                 ),
               ),
@@ -78,7 +98,12 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
     );
   }
 
-  Widget _navItem(int index, String label, IconData icon) {
+  Widget _navItem(
+    int index,
+    String label,
+    IconData icon,
+    IconData selectedIcon,
+  ) {
     final selected = _currentIndex == index;
     return Expanded(
       child: Semantics(
@@ -104,7 +129,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                     borderRadius: BorderRadius.circular(34),
                   ),
                   child: Icon(
-                    icon,
+                    selected ? selectedIcon : icon,
                     size: 29,
                     color: selected ? Colors.white : Colors.white70,
                   ),
