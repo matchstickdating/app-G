@@ -7,7 +7,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/motion/motion_tokens.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../../../../core/widgets/match_loading_indicator.dart';
 import '../../../chat/presentation/screens/chat_conversation_screen.dart';
 import '../../../matching/presentation/widgets/match_celebration_dialog.dart';
 import '../../../profile/presentation/controllers/profile_controller.dart';
@@ -16,6 +15,7 @@ import '../controllers/discovery_controller.dart';
 import '../widgets/discovery_action_buttons.dart';
 import '../widgets/discovery_card.dart';
 import '../widgets/discovery_header.dart';
+import '../widgets/discovery_loading_view.dart';
 import '../widgets/people_search.dart';
 import '../../../profile/domain/entities/profile_entity.dart';
 
@@ -58,9 +58,7 @@ class DiscoveryScreen extends ConsumerWidget {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: SystemUiOverlayStyle.light,
       child: Scaffold(
-        backgroundColor: hasPhoto || !state.isLoading
-            ? const Color(0xFF101A1C)
-            : null,
+        backgroundColor: const Color(0xFF101A1C),
         body: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 600),
@@ -74,8 +72,10 @@ class DiscoveryScreen extends ConsumerWidget {
                   child: SizedBox(
                     height: math.max(
                       constraints.maxHeight,
-                      hasPhoto || state.isLoading
+                      hasPhoto
                           ? 680 + textExtra * 4
+                          : state.isLoading
+                          ? 820 + textExtra * 14
                           : 900 + textExtra * 26,
                     ),
                     child: ClipRect(
@@ -151,15 +151,7 @@ class DiscoveryScreen extends ConsumerWidget {
                               },
                             )
                           else if (state.isLoading)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 150),
-                              child: const Center(
-                                child: MatchLoadingIndicator(
-                                  type: MatchLoadingType.thinking,
-                                  message: 'curating intentional profiles...',
-                                ),
-                              ),
-                            )
+                            const DiscoveryLoadingView()
                           else
                             _buildEmptyState(context, ref, state),
                           Positioned(

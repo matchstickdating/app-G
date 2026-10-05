@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -47,6 +48,11 @@ class _EmptyDiscovery extends DiscoveryController {
   }
 }
 
+class _LoadingDiscovery extends DiscoveryController {
+  @override
+  DiscoveryState build() => const DiscoveryState(isLoading: true);
+}
+
 class _Profile extends ProfileController {
   @override
   ProfileState build() => ProfileState(profile: _profile);
@@ -54,6 +60,72 @@ class _Profile extends ProfileController {
 
 void main() {
   setUp(() => GoogleFonts.config.allowRuntimeFetching = false);
+
+  testWidgets('loading discovery shows a profile preview and clear status', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          discoveryControllerProvider.overrideWith(_LoadingDiscovery.new),
+          profileControllerProvider.overrideWith(_Profile.new),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          home: const MainNavigationShell(),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.byKey(const Key('discovery-loading-preview')), findsOneWidget);
+    expect(find.text('Finding your people'), findsOneWidget);
+    expect(find.text('curating intentional profiles...'), findsNothing);
+    expect(
+      tester.getBottomLeft(find.text('Finding your people')).dy,
+      lessThan(
+        tester.getTopLeft(find.byKey(const Key('primary-navigation-pill'))).dy,
+      ),
+    );
+    await tester.ensureVisible(find.text('Finding your people'));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Finding your people').hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('loading discovery remains readable with large text', (
+    tester,
+  ) async {
+    tester.view.physicalSize = const Size(320, 568);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          discoveryControllerProvider.overrideWith(_LoadingDiscovery.new),
+          profileControllerProvider.overrideWith(_Profile.new),
+        ],
+        child: MaterialApp(
+          theme: AppTheme.light(),
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: const TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: const MainNavigationShell(),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(seconds: 1));
+    await tester.ensureVisible(find.text('Finding your people'));
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Finding your people').hitTestable(), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('empty discovery offers clear feedback and a reachable refresh', (
     tester,
@@ -298,6 +370,14 @@ void main() {
     await tester.pump();
     expect(find.byKey(const Key('primary-navigation-pill')), findsOneWidget);
     expect(find.byType(BackdropFilter), findsWidgets);
+    final navigation = find.byKey(const Key('primary-navigation-pill'));
+    expect(
+      find.descendant(
+        of: navigation,
+        matching: find.byIcon(CupertinoIcons.compass_fill),
+      ),
+      findsOneWidget,
+    );
     await tester.tap(find.byTooltip('My profile'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 500));
@@ -320,6 +400,16 @@ void main() {
       await tester.tap(find.byTooltip(label));
       await tester.pump(const Duration(seconds: 1));
       expect(find.byKey(const Key('primary-navigation-pill')), findsOneWidget);
+      final activeIcon = switch (label) {
+        'Likes' => CupertinoIcons.heart_fill,
+        'Community' => CupertinoIcons.person_2_fill,
+        'Messages' => CupertinoIcons.chat_bubble_2_fill,
+        _ => CupertinoIcons.compass_fill,
+      };
+      expect(
+        find.descendant(of: navigation, matching: find.byIcon(activeIcon)),
+        findsOneWidget,
+      );
     }
     expect(tester.takeException(), isNull);
   });

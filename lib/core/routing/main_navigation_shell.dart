@@ -1,5 +1,6 @@
 import 'dart:ui' as ui;
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import '../../features/chat/presentation/screens/matches_and_chat_screen.dart';
@@ -67,26 +68,26 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                     _navItem(
                       0,
                       'Discover',
-                      Icons.explore_outlined,
-                      Icons.explore_rounded,
+                      CupertinoIcons.compass,
+                      CupertinoIcons.compass_fill,
                     ),
                     _navItem(
                       1,
                       'Likes',
-                      Icons.favorite_border_rounded,
-                      Icons.favorite_rounded,
+                      CupertinoIcons.heart,
+                      CupertinoIcons.heart_fill,
                     ),
                     _navItem(
                       2,
                       'Community',
-                      Icons.groups_outlined,
-                      Icons.groups_rounded,
+                      CupertinoIcons.person_2,
+                      CupertinoIcons.person_2_fill,
                     ),
                     _navItem(
                       3,
                       'Messages',
-                      Icons.chat_bubble_outline_rounded,
-                      Icons.chat_bubble_rounded,
+                      CupertinoIcons.chat_bubble_2,
+                      CupertinoIcons.chat_bubble_2_fill,
                     ),
                   ],
                 ),
@@ -130,7 +131,7 @@ class _MainNavigationShellState extends State<MainNavigationShell> {
                   ),
                   child: Icon(
                     selected ? selectedIcon : icon,
-                    size: 29,
+                    size: 27,
                     color: selected ? Colors.white : Colors.white70,
                   ),
                 ),
